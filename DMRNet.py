@@ -47,7 +47,6 @@ class DMRNet(nn.Module):
 
         self.blocks = nn.Sequential(OrderedDict(blocks))
         self.fc = nn.Linear(nf1 + nf2 + nf3 + nf4, out_channels)
-        self.act = nn.ReLU()
 
     def forward(self, x):
         sizes = x.shape
@@ -61,7 +60,7 @@ class DMRNet(nn.Module):
         x3 = blocks[3].view(sizes[0], -1)
 
         out = torch.cat((x0, x1, x2, x3), dim=1)
-        out = self.act(self.fc(out))
+        out = self.fc(out)
 
         return out
 
