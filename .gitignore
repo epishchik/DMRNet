@@ -1,6 +1,6 @@
-**.png
-**.jpg
-**.tif
+test_architecture/
 .vscode/
 .fleet/
 **__pycache__**
+test.py
+architecture.txt
