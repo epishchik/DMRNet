@@ -1,0 +1,6 @@
+**.png
+**.jpg
+**.tif
+.vscode/
+.fleet/
+**__pycache__**
