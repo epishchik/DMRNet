@@ -3,109 +3,30 @@ import torch
 from torch import nn
 
 
-class DMRNet(nn.Module):
-    def __init__(self,
-                 sizes=(256, 256),
-                 in_channels=[3, 16],
-                 convs=[2, 4, 4, 6],
-                 h_channels=[32, 32, 64, 64],
-                 out_channels=5):
+__all__ = ['DilatedBranchConvBlock']
+
+
+class DilatedBranchConvBlock(nn.Module):
+    def __init__(self, n_convs, inc, outc):
         super().__init__()
 
-        if len(sizes) != 2:
-            raise RuntimeError('sizes must be a tuple of two elements')
+        self.n_convs = n_convs
+        block_convs = []
+        block_convs.append(
+            ('block_conv_1', DilatedBranchConvSingle(inc, outc)))
 
-        if len(in_channels) != 2:
-            raise RuntimeError('in_channels must be a list of two elements')
+        for i in range(n_convs - 2):
+            block_convs.append(
+                (f'block_conv_{i + 2}', DilatedBranchConvSingle(outc, outc)))
 
-        if len(convs) < 2:
-            raise RuntimeError('convs must contain at least two elements')
+        block_convs.append((f'block_conv_{n_convs}',
+                            DilatedBranchConvSingleLast(outc, outc)))
 
-        if len(convs) != len(h_channels):
-            raise RuntimeError('h_channels must have same shape as convs')
+        self.block_convs = nn.Sequential(OrderedDict(block_convs))
 
-        self.mrb = MultiResolutionBlock(inc=in_channels[0],
-                                        outc=in_channels[1])
-
-        blocks = []
-        self.n = len(convs)
-
-        blocks.append((f'block_1', DilatedBranchConvBlock(convs[0],
-                                                          in_channels[1],
-                                                          h_channels[0])))
-
-        for i in range(1, self.n):
-            blocks.append((f'block_{i + 1}',
-                           DilatedBranchConvBlock(convs[i],
-                                                  h_channels[i - 1],
-                                                  h_channels[i])))
-
-        nf1 = sizes[0] * sizes[1] * h_channels[-1]
-        nf2 = int(sizes[0] * sizes[1] * h_channels[-1] / 4.0)
-        nf3 = int(sizes[0] * sizes[1] * h_channels[-1] / 16.0)
-        nf4 = int(sizes[0] * sizes[1] * h_channels[-1] / 64.0)
-
-        self.blocks = nn.Sequential(OrderedDict(blocks))
-        self.fc = nn.Linear(nf1 + nf2 + nf3 + nf4, out_channels)
-
-    def forward(self, x):
-        sizes = x.shape
-
-        x = self.mrb(x)
-        blocks = self.blocks(x)
-
-        x0 = blocks[0].view(sizes[0], -1)
-        x1 = blocks[1].view(sizes[0], -1)
-        x2 = blocks[2].view(sizes[0], -1)
-        x3 = blocks[3].view(sizes[0], -1)
-
-        out = torch.cat((x0, x1, x2, x3), dim=1)
-        out = self.fc(out)
-
-        return out
-
-
-class MultiResolutionBlock(nn.Module):
-    def __init__(self, inc, outc):
-        super().__init__()
-
-        self.branch_1 = nn.Conv2d(in_channels=inc,
-                                  out_channels=outc,
-                                  kernel_size=(3, 3),
-                                  stride=1,
-                                  padding=4,
-                                  dilation=4)
-
-        self.branch_2 = nn.Conv2d(in_channels=inc,
-                                  out_channels=outc,
-                                  kernel_size=(3, 3),
-                                  stride=2,
-                                  padding=3,
-                                  dilation=3)
-
-        self.branch_3 = nn.Conv2d(in_channels=inc,
-                                  out_channels=outc,
-                                  kernel_size=(3, 3),
-                                  stride=4,
-                                  padding=2,
-                                  dilation=2)
-
-        self.branch_4 = nn.Conv2d(in_channels=inc,
-                                  out_channels=outc,
-                                  kernel_size=(3, 3),
-                                  stride=8,
-                                  padding=1,
-                                  dilation=1)
-
-        self.act = nn.ReLU()
-
-    def forward(self, x):
-        fm1 = self.act(self.branch_1(x))
-        fm2 = self.act(self.branch_2(x))
-        fm3 = self.act(self.branch_3(x))
-        fm4 = self.act(self.branch_4(x))
-
-        return [fm1, fm2, fm3, fm4]
+    def forward(self, fm):
+        block_convs = self.block_convs(fm)
+        return block_convs
 
 
 class DilatedBranchConvSingle(nn.Module):
@@ -410,26 +331,3 @@ class DilatedBranchConvSingleLast(nn.Module):
         h4 = self.act(self.branch_4_bottleneck(h4))
 
         return [h1, h2, h3, h4]
-
-
-class DilatedBranchConvBlock(nn.Module):
-    def __init__(self, n_convs, inc, outc):
-        super().__init__()
-
-        self.n_convs = n_convs
-        block_convs = []
-        block_convs.append(
-            ('block_conv_1', DilatedBranchConvSingle(inc, outc)))
-
-        for i in range(n_convs - 2):
-            block_convs.append(
-                (f'block_conv_{i + 2}', DilatedBranchConvSingle(outc, outc)))
-
-        block_convs.append((f'block_conv_{n_convs}',
-                            DilatedBranchConvSingleLast(outc, outc)))
-
-        self.block_convs = nn.Sequential(OrderedDict(block_convs))
-
-    def forward(self, fm):
-        block_convs = self.block_convs(fm)
-        return block_convs

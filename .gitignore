@@ -3,3 +3,5 @@ test_architecture/
 .fleet/
 **__pycache__**
 test.py
+data/
+checkpoints/
