@@ -4,11 +4,27 @@ from torch import nn
 import torchvision.transforms as transforms
 from torchvision import datasets
 from torch.utils.data import DataLoader
+from prettytable import PrettyTable
 
 from model import DMRNet
 
 import warnings
 warnings.filterwarnings('ignore')
+
+
+def init_weights(m):
+    if isinstance(m, nn.Conv2d):
+        nn.init.xavier_uniform(m.weight)
+        if m.bias is not None:
+            m.bias.data.fill_(0.01)
+    elif isinstance(m, nn.ConvTranspose2d):
+        nn.init.xavier_uniform(m.weight)
+        if m.bias is not None:
+            m.bias.data.fill_(0.01)
+    elif isinstance(m, nn.Linear):
+        nn.init.xavier_uniform(m.weight)
+        if m.bias is not None:
+            m.bias.data.fill_(0.01)
 
 
 class Trainer:
@@ -78,6 +94,8 @@ class Trainer:
                             h_channels=h_channels,
                             out_channels=outc).to(self.device)
 
+        self.model.apply(init_weights)
+
         if 'checkpoint' in self.config.keys():
             self.model.load_state_dict(torch.load(self.config['checkpoint']))
 
@@ -88,7 +106,21 @@ class Trainer:
         self.criterion = nn.CrossEntropyLoss()
         self.save_path = self.config['save_path']
 
+        print(self.model)
+        self.count_parameters()
         print('finished model initialization')
+
+    def count_parameters(self):
+        table = PrettyTable(['modules', 'parameters'])
+        total_params = 0
+        for name, parameter in self.model.named_parameters():
+            if not parameter.requires_grad:
+                continue
+            params = parameter.numel()
+            table.add_row([name, params])
+            total_params += params
+        print(table)
+        print(f'total trainable parameters: {total_params}')
 
     def train(self):
         best_val_err = 99999999999
@@ -97,6 +129,7 @@ class Trainer:
             running_loss = 0.0
 
             print('training')
+            self.model.train()
             for i, data in enumerate(self.trainloader):
                 inputs, labels = data
                 inputs = inputs.to(self.device)
@@ -117,6 +150,7 @@ class Trainer:
             running_loss = 0.0
 
             print('validation')
+            self.model.eval()
             with torch.no_grad():
                 for i, data in enumerate(self.testloader):
                     inputs, labels = data
@@ -128,8 +162,9 @@ class Trainer:
 
                     running_loss += loss.item()
 
-                    if (running_loss / (i + 1)) < best_val_err:
-                        best_val_err = running_loss / (i + 1)
+                    loss_val = running_loss / (i % self.print_steps + 1)
+                    if loss_val < best_val_err:
+                        best_val_err = loss_val
 
                     if i % self.print_steps == self.print_steps - 1:
                         val = running_loss / self.print_steps
