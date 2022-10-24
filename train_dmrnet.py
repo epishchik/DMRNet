@@ -35,7 +35,7 @@ class Trainer:
         self.train()
 
     def parse_config(self):
-        with open('./train.yaml') as stream:
+        with open('./train_dmrnet.yaml') as stream:
             self.config = yaml.safe_load(stream)
         print('finished parsing')
 

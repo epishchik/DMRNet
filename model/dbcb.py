@@ -32,6 +32,8 @@ class DilatedBranchConvBlock(nn.Module):
 class DilatedBranchConvSingle(nn.Module):
     def __init__(self, inc, outc):
         super().__init__()
+        self.identity = inc == outc
+
         self.branch_1_same_resolution = nn.Conv2d(in_channels=inc,
                                                   out_channels=outc,
                                                   kernel_size=(3, 3),
@@ -145,12 +147,20 @@ class DilatedBranchConvSingle(nn.Module):
         h3 = self.act(self.branch_3_bottleneck(h3))
         h4 = self.act(self.branch_4_bottleneck(h4))
 
+        if self.identity:
+            h1 = h1 + fm[0]
+            h2 = h2 + fm[1]
+            h3 = h3 + fm[2]
+            h4 = h4 + fm[3]
+
         return [h1, h2, h3, h4]
 
 
 class DilatedBranchConvSingleLast(nn.Module):
     def __init__(self, inc, outc):
         super().__init__()
+        self.identity = inc == outc
+
         self.branch_1_to_branch_1 = nn.Conv2d(in_channels=inc,
                                               out_channels=outc,
                                               kernel_size=(3, 3),
@@ -329,5 +339,11 @@ class DilatedBranchConvSingleLast(nn.Module):
         h2 = self.act(self.branch_2_bottleneck(h2))
         h3 = self.act(self.branch_3_bottleneck(h3))
         h4 = self.act(self.branch_4_bottleneck(h4))
+
+        if self.identity:
+            h1 = h1 + fm[0]
+            h2 = h2 + fm[1]
+            h3 = h3 + fm[2]
+            h4 = h4 + fm[3]
 
         return [h1, h2, h3, h4]
