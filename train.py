@@ -40,9 +40,13 @@ class Trainer:
         print('finished parsing')
 
     def init_dataset(self):
+        h = self.config['dataset']['image_size']['height']
+        w = self.config['dataset']['image_size']['width']
+
         transform = transforms.Compose(
             [
                 transforms.ToTensor(),
+                transforms.Resize(size=(h, w)),
                 transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
             ]
         )
@@ -162,17 +166,19 @@ class Trainer:
 
                     running_loss += loss.item()
 
-                    loss_val = running_loss / (i % self.print_steps + 1)
-                    if loss_val < best_val_err:
-                        best_val_err = loss_val
-
                     if i % self.print_steps == self.print_steps - 1:
                         val = running_loss / self.print_steps
+                        if val < best_val_err:
+                            best_val_err = val
                         print(f'[{epoch + 1}, {i + 1:5d}] loss: {val:.3f}')
                         running_loss = 0.0
 
-            save_name = f'dmrnet_{best_val_err:.3f}'
+            save_name = f'dmrnet_{best_val_err:.3f}.pth'
             torch.save(self.model.state_dict(), self.save_path + save_name)
+
+            if epoch == self.epochs - 1:
+                save_name = f'dmrnet_last.pth'
+                torch.save(self.model.state_dict(), self.save_path + save_name)
 
         print('finished training')
 
