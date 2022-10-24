@@ -107,13 +107,13 @@ class Trainer:
         self.save_path = self.config['save_path']
 
         print(self.model)
-        self.count_parameters()
+        self.count_parameters(self.model)
         print('finished model initialization')
 
-    def count_parameters(self):
+    def count_parameters(self, model):
         table = PrettyTable(['modules', 'parameters'])
         total_params = 0
-        for name, parameter in self.model.named_parameters():
+        for name, parameter in model.named_parameters():
             if not parameter.requires_grad:
                 continue
             params = parameter.numel()
