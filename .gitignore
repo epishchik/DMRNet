@@ -5,3 +5,5 @@ test_architecture/
 test.py
 data/
 checkpoints/
+compare_train.py
+compare_train.yaml

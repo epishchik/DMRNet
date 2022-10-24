@@ -11,15 +11,11 @@ __all__ = ['DMRNet']
 
 class DMRNet(nn.Module):
     def __init__(self,
-                 sizes=(256, 256),
                  in_channels=[3, 16],
                  convs=[2, 4, 4, 6],
                  h_channels=[32, 32, 64, 64],
                  out_channels=5):
         super().__init__()
-
-        if len(sizes) != 2:
-            raise RuntimeError('sizes must be a tuple of two elements')
 
         if len(in_channels) != 2:
             raise RuntimeError('in_channels must be a list of two elements')
@@ -46,26 +42,27 @@ class DMRNet(nn.Module):
                                                   h_channels[i - 1],
                                                   h_channels[i])))
 
-        nf1 = sizes[0] * sizes[1] * h_channels[-1]
-        nf2 = int(sizes[0] * sizes[1] * h_channels[-1] / 4.0)
-        nf3 = int(sizes[0] * sizes[1] * h_channels[-1] / 16.0)
-        nf4 = int(sizes[0] * sizes[1] * h_channels[-1] / 64.0)
-
         self.blocks = nn.Sequential(OrderedDict(blocks))
-        self.fc = nn.Linear(nf1 + nf2 + nf3 + nf4, out_channels)
+
+        self.avgpool1 = nn.AdaptiveAvgPool2d(output_size=(1, 1))
+        self.avgpool2 = nn.AdaptiveAvgPool2d(output_size=(1, 1))
+        self.avgpool3 = nn.AdaptiveAvgPool2d(output_size=(1, 1))
+        self.avgpool4 = nn.AdaptiveAvgPool2d(output_size=(1, 1))
+
+        self.fc = nn.Linear(int(h_channels[-1] * 4), out_channels)
 
     def forward(self, x):
-        sizes = x.shape
+        shapes = x.shape
 
         x = self.mrb(x)
         blocks = self.blocks(x)
 
-        x0 = blocks[0].view(sizes[0], -1)
-        x1 = blocks[1].view(sizes[0], -1)
-        x2 = blocks[2].view(sizes[0], -1)
-        x3 = blocks[3].view(sizes[0], -1)
+        x0 = self.avgpool1(blocks[0])
+        x1 = self.avgpool2(blocks[1])
+        x2 = self.avgpool3(blocks[2])
+        x3 = self.avgpool4(blocks[3])
 
         out = torch.cat((x0, x1, x2, x3), dim=1)
-        out = self.fc(out)
+        out = self.fc(out.view(shapes[0], -1))
 
         return out

@@ -1,5 +1,7 @@
 import yaml
 import torch
+import numpy as np
+import random
 from torch import nn
 import torchvision.transforms as transforms
 from torchvision import datasets
@@ -10,6 +12,15 @@ from model import DMRNet
 
 import warnings
 warnings.filterwarnings('ignore')
+
+seed = 42
+torch.manual_seed(seed)
+torch.cuda.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
+np.random.seed(seed)
+random.seed(seed)
+torch.backends.cudnn.benchmark = False
+torch.backends.cudnn.deterministic = True
 
 
 def init_weights(m):
@@ -35,19 +46,17 @@ class Trainer:
         self.train()
 
     def parse_config(self):
-        with open('./train_dmrnet.yaml') as stream:
+        with open('./train.yaml') as stream:
             self.config = yaml.safe_load(stream)
         print('finished parsing')
 
     def init_dataset(self):
-        h = self.config['dataset']['image_size']['height']
-        w = self.config['dataset']['image_size']['width']
-
         transform = transforms.Compose(
             [
                 transforms.ToTensor(),
-                transforms.Resize(size=(h, w)),
-                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+                transforms.Resize(size=(32, 32)),
+                transforms.Normalize((0.485, 0.456, 0.406),
+                                     (0.229, 0.224, 0.225))
             ]
         )
 
@@ -79,24 +88,20 @@ class Trainer:
         print('finished dataset initialization')
 
     def init_model(self):
-        h = self.config['dataset']['image_size']['height']
-        w = self.config['dataset']['image_size']['width']
-
         in_channels = self.config['model']['input_channels']
         convs = self.config['model']['convs_per_block']
         h_channels = self.config['model']['hidden_channels']
-        outc = self.config['model']['output_channels']
+        out_channels = self.config['model']['output_channels']
 
         lr = self.config['optimizer']['learning_rate']
         wd = self.config['optimizer']['weight_decay']
 
         self.device = torch.device(self.config['device'])
 
-        self.model = DMRNet(sizes=(h, w),
-                            in_channels=in_channels,
+        self.model = DMRNet(in_channels=in_channels,
                             convs=convs,
                             h_channels=h_channels,
-                            out_channels=outc).to(self.device)
+                            out_channels=out_channels).to(self.device)
 
         self.model.apply(init_weights)
 
