@@ -2,6 +2,8 @@
 
 This is my first CNN architecture. I realised a main idea - multi-resolution branches with different dilation number, but it isn't working in production now.
 
+![Architecture](/images/dmrnet.png "DMRNet")
+
 ## Annotation
 - This model isn't working good, training speed of this model is more than 30 times slower than resnet18 with same number of trainable parametrs.
 - I used 4 branches with same resolution in DMRNet, each branch has own dilation number.
