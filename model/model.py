@@ -44,10 +44,10 @@ class DMRNet(nn.Module):
 
         self.blocks = nn.Sequential(OrderedDict(blocks))
 
-        self.avgpool1 = nn.AdaptiveAvgPool2d(output_size=(1, 1))
-        self.avgpool2 = nn.AdaptiveAvgPool2d(output_size=(1, 1))
-        self.avgpool3 = nn.AdaptiveAvgPool2d(output_size=(1, 1))
-        self.avgpool4 = nn.AdaptiveAvgPool2d(output_size=(1, 1))
+        self.avgpool_1 = nn.AdaptiveAvgPool2d(output_size=(1, 1))
+        self.avgpool_2 = nn.AdaptiveAvgPool2d(output_size=(1, 1))
+        self.avgpool_3 = nn.AdaptiveAvgPool2d(output_size=(1, 1))
+        self.avgpool_4 = nn.AdaptiveAvgPool2d(output_size=(1, 1))
 
         self.fc = nn.Linear(int(h_channels[-1] * 4), out_channels)
 
@@ -57,10 +57,10 @@ class DMRNet(nn.Module):
         x = self.mrb(x)
         blocks = self.blocks(x)
 
-        x0 = self.avgpool1(blocks[0])
-        x1 = self.avgpool2(blocks[1])
-        x2 = self.avgpool3(blocks[2])
-        x3 = self.avgpool4(blocks[3])
+        x0 = self.avgpool_1(blocks[0])
+        x1 = self.avgpool_2(blocks[1])
+        x2 = self.avgpool_3(blocks[2])
+        x3 = self.avgpool_4(blocks[3])
 
         out = torch.cat((x0, x1, x2, x3), dim=1)
         out = self.fc(out.view(shapes[0], -1))
