@@ -13,6 +13,6 @@ optimizer:
   weight_decay: 0.00001
 
 epochs: 5
-device: cpu
+device: cuda:0
 num_workers: 8
 save_path: ./checkpoints/dmrnet/
