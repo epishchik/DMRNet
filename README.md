@@ -39,4 +39,4 @@ model = DMRNet(in_channels=in_channels,
 ## Project structure
 - model - architecture.
 - train.py - training algorithm.
-- train.yaml - config file for training algorith and model configuration.
+- train.yaml - configuration file for training algorithm and model configuration.
