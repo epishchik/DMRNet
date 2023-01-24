@@ -20,11 +20,11 @@ from model import DMRNet
 in_channels = [3, 32]
 
 # len(convs) = number of blocks
-# each value in convs is a number of convolutions in block
+# each value in convs is the number of convolutions in the block
 convs = [2, 4, 4, 6]
 
 # len(h_channels) = number of blocks
-# each value in h_channels is a number of output channels for convolutions
+# each value in h_channels is the number of output channels for convolutions
 h_channels = [32, 64, 64, 128]
 
 # number of output channels
