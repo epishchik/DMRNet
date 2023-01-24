@@ -1,16 +1,16 @@
 # DMRNet
 
-This is my first CNN architecture. I realised a main idea - multi-resolution branches with different dilation number, but it isn't working in production now.
+This is my first CNN architecture. I implemented one main idea - multi-resolution branches with different dilation numbers, but it doesn't work in production now.
 
 ![Architecture](/images/dmrnet.png "DMRNet")
 
 ## Annotation
-- This model isn't working good, training speed of this model is more than 30 times slower than resnet18 with same number of trainable parametrs.
+- This model doesn't work well, the training speed of this model is more than 30 times slower than resnet18 with the same number of trainable parameters.
 - I used 4 branches with same resolution in DMRNet, each branch has own dilation number.
 - Convolutions with same in_channels and out_channels have residual connections.
-- DMRNet consists of DilatedBranchConvBlock, each block ends with cross-branch convolutions. Intermediate convolutions in block also have cross-branch connection branch1 - branch2 and branch3 - branch4.
-- Cross-branch-connections have same dilation as start connection branch.
-- ConvTranspose2D used for increasing the resolution.
+- DMRNet consists of DilatedBranchConvBlock, each block ends with cross-branch convolutions. Intermediate convolutions in the block also have cross-branch connections branch1 - branch2 and branch3 - branch4.
+- Cross-branch connections have the same dilation as the start branch connection.
+- ConvTranspose2D used to increase resolution.
 
 ## Model configuration
 ```python
